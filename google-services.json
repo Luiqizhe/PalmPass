@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "602650454669",
+    "firebase_url": "https://palmpass-39e86-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "palmpass-39e86",
+    "storage_bucket": "palmpass-39e86.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:602650454669:android:60def3b4e3f3bd8541d0c4",
+        "android_client_info": {
+          "package_name": "com.utem.palmpass"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-yvKnWO-aYCle0nURtg_1v7rBdQ4GUsM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
