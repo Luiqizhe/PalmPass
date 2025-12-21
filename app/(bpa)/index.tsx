@@ -63,9 +63,7 @@ export default function BPADashboard() {
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // ==========================
   // PICKER STATES & HELPERS
-  // ==========================
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState<"start" | "end" | null>(null);
 
@@ -82,6 +80,18 @@ export default function BPADashboard() {
     if (isNaN(h) || isNaN(m)) return d;
     d.setHours(h, m, 0, 0);
     return d;
+  };
+
+  // Helper for 12-hour format display (e.g., 14:00 -> 2:00 PM)
+  const formatTimeDisplay = (timeString?: string) => {
+    if (!timeString) return "TBA";
+    const [hours, minutes] = timeString.split(":").map(Number);
+    if (isNaN(hours) || isNaN(minutes)) return timeString;
+    
+    const suffix = hours >= 12 ? "PM" : "AM";
+    const hours12 = hours % 12 || 12; 
+    const minutesFormatted = minutes < 10 ? `0${minutes}` : minutes;
+    return `${hours12}:${minutesFormatted} ${suffix}`;
   };
 
   const onDateChange = (event: any, selectedDate?: Date) => {
@@ -109,26 +119,39 @@ export default function BPADashboard() {
     setShowTimePicker(null);
   };
 
-  // ==========================
   // FETCH DATA
-  // ==========================
   useEffect(() => {
+    // A. Fetch Exams & Sort Client-Side
     const unsubExams = onSnapshot(query(collection(db, "EXAM"), orderBy("exam_id", "asc")), (snap) => {
-      setExams(snap.docs.map(doc => ({ exam_id: doc.id, ...doc.data() })));
+      const data = snap.docs.map(doc => ({ exam_id: doc.id, ...doc.data() }));
+
+      // ✏️ SORTING LOGIC: Incomplete Details First
+      data.sort((a: any, b: any) => {
+        const aComplete = a.date && a.start_time && a.end_time && a.location;
+        const bComplete = b.date && b.start_time && b.end_time && b.location;
+
+        if (aComplete === bComplete) return 0; // Keep existing order (ID) if both same status
+        return aComplete ? 1 : -1; // Push complete ones to bottom
+      });
+
+      setExams(data);
       setLoading(false);
     });
+
+    // Fetch Lecturers
     const unsubLecturers = onSnapshot(collection(db, "LECTURER"), (snap) => {
       setLecturers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
+
+    // Fetch Students
     const unsubStudents = onSnapshot(collection(db, "STUDENT"), (snap) => {
       setStudents(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
+
     return () => { unsubExams(); unsubLecturers(); unsubStudents(); };
   }, []);
 
-  // ==========================
   // ACTIONS
-  // ==========================
   const handleCreateStub = async () => {
     if (!newExamId || !newExamSubject) {
         Alert.alert("Error", "ID and Subject are required.");
@@ -176,11 +199,13 @@ export default function BPADashboard() {
     setTempAssignments(new Set(snap.docs.map(d => d.data().lecturer_id)));
     setLecturerModalVisible(true);
   };
+
   const toggleLecturer = (id: string) => {
     const newSet = new Set(tempAssignments);
     if (newSet.has(id)) newSet.delete(id); else newSet.add(id);
     setTempAssignments(newSet);
   };
+
   const saveLecturers = async () => {
     if(!selectedExam) return; setSaving(true);
     try {
@@ -205,11 +230,13 @@ export default function BPADashboard() {
     setTempAssignments(new Set(snap.docs.map(d => d.data().matric_no)));
     setStudentModalVisible(true);
   };
+
   const toggleStudent = (id: string) => {
     const newSet = new Set(tempAssignments);
     if (newSet.has(id)) newSet.delete(id); else newSet.add(id);
     setTempAssignments(newSet);
   };
+
   const saveStudents = async () => {
     if(!selectedExam) return; setSaving(true);
     try {
@@ -242,7 +269,14 @@ export default function BPADashboard() {
         { text: "Delete", style: "destructive", onPress: async () => await deleteDoc(doc(db, "EXAM", examId)) }
     ]);
   };
-  const handleLogout = async () => { await signOut(firebaseAuth); router.replace("./(auth)/"); };
+  
+  const handleLogout = () => {
+    Alert.alert("Logout", "Confirm logout?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Logout", style: "destructive", onPress: async () => { await signOut(firebaseAuth); router.replace("./(auth)/"); } },
+    ]);
+  };
+
   const isDetailsComplete = (e: any) => e.date && e.start_time && e.end_time && e.location;
 
   // IOS PICKER RENDERER
@@ -306,11 +340,18 @@ export default function BPADashboard() {
                     {isDetailsComplete(item) && <Ionicons name="checkmark-circle" size={22} color="#22c55e" style={{marginLeft: 10}} />}
                 </View>
                 
-                <Text style={styles.examDetail}>
-                    {isDetailsComplete(item) 
-                        ? `${item.date} | ${item.start_time}-${item.end_time} | ${item.location}` 
-                        : "⚠️ Details missing"}
-                </Text>
+                {isDetailsComplete(item) ? (
+                    <View style={{marginBottom: 12}}>
+                        <Text style={styles.examDetail}>
+                            📅 {item.date} | 📍 {item.location}
+                        </Text>
+                        <Text style={styles.examDetail}>
+                            🕒 {formatTimeDisplay(item.start_time)} - {formatTimeDisplay(item.end_time)}
+                        </Text>
+                    </View>
+                ) : (
+                    <Text style={[styles.examDetail, {color: '#f59e0b'}]}>⚠️ Details missing</Text>
+                )}
 
                 <View style={styles.actionRow}>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => openDetailsModal(item)}>
@@ -402,7 +443,6 @@ export default function BPADashboard() {
       </Modal>
 
       {/* --- MODAL 3 & 4 (LECTURERS / STUDENTS) --- */}
-      {/* (Logic remains same, just ensuring styles are applied correctly) */}
       <Modal animationType="slide" visible={lecturerModalVisible} onRequestClose={() => setLecturerModalVisible(false)}>
          <SafeAreaView style={styles.fullScreenModal}>
             <View style={styles.fullScreenHeader}>
@@ -471,21 +511,21 @@ const styles = StyleSheet.create({
   
   examTitle: { color: "#38bdf8", fontSize: 18, fontWeight: "bold" },
   examSubTitle: { color: "white", fontSize: 15, fontWeight: "600", marginTop: 2 },
-  examDetail: { color: "#cbd5e1", fontSize: 13, marginBottom: 12 },
+  examDetail: { color: "#cbd5e1", fontSize: 14, marginBottom: 4 }, // Increased font slightly to match student view
   
   // Compact Action Row
-  actionRow: { flexDirection: "row", gap: 8, marginTop: 4 },
+  actionRow: { flexDirection: "row", gap: 8, marginTop: 12 },
   actionBtn: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     backgroundColor: "#0f172a", 
-    paddingHorizontal: 8, // reduced
-    paddingVertical: 6,   // reduced
+    paddingHorizontal: 8, 
+    paddingVertical: 6,   
     borderRadius: 6, 
     borderWidth: 1, 
     borderColor: "#334155" 
   },
-  actionText: { color: "#38bdf8", fontSize: 12, fontWeight: "600", marginLeft: 4 }, // reduced font size
+  actionText: { color: "#38bdf8", fontSize: 12, fontWeight: "600", marginLeft: 4 }, 
   iconAction: { padding: 6, marginLeft: 'auto' },
 
   emptyText: { textAlign: "center", color: "#64748b", marginTop: 40, fontSize: 16 },
