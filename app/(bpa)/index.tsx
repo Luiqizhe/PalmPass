@@ -315,7 +315,7 @@ export default function BPADashboard() {
       <View style={styles.header}>
         <View>
             <Text style={styles.title}>BPA Dashboard</Text>
-            <Text style={styles.subtitle}>Master Exam Control</Text>
+            <Text style={styles.subtitle}>Exam Management</Text>
         </View>
         <TouchableOpacity onPress={handleLogout} style={styles.iconBtn}>
             <Ionicons name="log-out-outline" size={26} color="#94a3b8" />
@@ -360,7 +360,7 @@ export default function BPADashboard() {
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => openLecturerModal(item)}>
                         <Ionicons name="person-outline" size={16} color="#facc15" />
-                        <Text style={[styles.actionText, {color: "#facc15"}]}>Staff</Text>
+                        <Text style={[styles.actionText, {color: "#facc15"}]}>Invigilators</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => openStudentModal(item)}>
                         <Ionicons name="people-outline" size={16} color="#34d399" />
@@ -385,11 +385,11 @@ export default function BPADashboard() {
       <Modal animationType="slide" transparent visible={createModalVisible} onRequestClose={() => setCreateModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>New Exam Skeleton</Text>
+                <Text style={styles.modalTitle}>New Exam</Text>
                 <TextInput placeholder="Exam ID (e.g. BITS1234)" placeholderTextColor="#64748b" style={styles.input} value={newExamId} onChangeText={setNewExamId} />
                 <TextInput placeholder="Subject Name" placeholderTextColor="#64748b" style={styles.input} value={newExamSubject} onChangeText={setNewExamSubject} />
                 <TouchableOpacity onPress={handleCreateStub} style={styles.saveBtn} disabled={saving}>
-                    {saving ? <ActivityIndicator color="white" /> : <Text style={styles.saveBtnText}>Create Skeleton</Text>}
+                    {saving ? <ActivityIndicator color="white" /> : <Text style={styles.saveBtnText}>Create Exam</Text>}
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setCreateModalVisible(false)} style={styles.cancelBtn}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
             </View>
