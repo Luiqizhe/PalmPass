@@ -162,8 +162,10 @@ export default function BPADashboard() {
         await setDoc(doc(db, "EXAM", newExamId), {
             exam_id: newExamId,
             subject: newExamSubject,
-            date: null, start_time: null, end_time: null, location: null,
-            created_at: new Date()
+            date: null, 
+            start_time: null, 
+            end_time: null, 
+            location: null
         });
         setCreateModalVisible(false);
         setNewExamId(""); setNewExamSubject("");
@@ -194,7 +196,7 @@ export default function BPADashboard() {
 
   const openLecturerModal = async (exam: any) => {
     setSelectedExam(exam); setSearchTerm("");
-    const q = query(collection(db, "INVIGILATION"), where("exam_id", "==", exam.exam_id));
+    const q = query(collection(db, "EXAM_INVIGILATOR"), where("exam_id", "==", exam.exam_id));
     const snap = await getDocs(q);
     setTempAssignments(new Set(snap.docs.map(d => d.data().lecturer_id)));
     setLecturerModalVisible(true);
@@ -210,13 +212,15 @@ export default function BPADashboard() {
     if(!selectedExam) return; setSaving(true);
     try {
         const batch = writeBatch(db);
-        const q = query(collection(db, "INVIGILATION"), where("exam_id", "==", selectedExam.exam_id));
+        const q = query(collection(db, "EXAM_INVIGILATOR"), where("exam_id", "==", selectedExam.exam_id));
         const snap = await getDocs(q);
         snap.forEach(d => batch.delete(d.ref));
         tempAssignments.forEach(lid => {
             const docId = `${selectedExam.exam_id}_${lid}`;
-            batch.set(doc(db, "INVIGILATION", docId), {
-                invigilation_id: docId, exam_id: selectedExam.exam_id, lecturer_id: lid, timestamp: new Date()
+            batch.set(doc(db, "EXAM_INVIGILATOR", docId), {
+                invigilation_id: docId, 
+                exam_id: selectedExam.exam_id, 
+                lecturer_id: lid
             });
         });
         await batch.commit(); setLecturerModalVisible(false); Alert.alert("Success", "Invigilators assigned.");
@@ -255,8 +259,12 @@ export default function BPADashboard() {
         studentsToAssign.forEach((s, idx) => {
             const docId = `${selectedExam.exam_id}_${s.matric_no}`;
             batch.set(doc(db, "ATTENDANCE", docId), {
-                attendance_id: docId, exam_id: selectedExam.exam_id, matric_no: s.matric_no,
-                student_name: s.name, table_no: (idx+1).toString(), status: "Pending", timestamp: null
+                attendance_id: docId, 
+                exam_id: selectedExam.exam_id, 
+                matric_no: s.matric_no,
+                table_no: (idx+1).toString(), 
+                status: "Pending", 
+                timestamp: null
             });
         });
         await batch.commit(); setStudentModalVisible(false); Alert.alert("Success", "Students assigned.");
@@ -356,7 +364,7 @@ export default function BPADashboard() {
                 <View style={styles.actionRow}>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => openDetailsModal(item)}>
                         <Ionicons name="create-outline" size={16} color="#38bdf8" />
-                        <Text style={styles.actionText}>Edit</Text>
+                        <Text style={styles.actionText}>Details</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => openLecturerModal(item)}>
                         <Ionicons name="person-outline" size={16} color="#facc15" />
