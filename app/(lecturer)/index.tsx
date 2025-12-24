@@ -3,8 +3,6 @@ import { Redirect, useRouter } from "expo-router";
 import { signOut } from "firebase/auth";
 import {
   collection,
-  deleteDoc,
-  doc,
   getDocs,
   onSnapshot,
   query,
@@ -20,7 +18,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { GestureHandlerRootView, Swipeable } from "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { db, firebaseAuth } from "../../src/firebase";
 import { styles } from "./_styles";
@@ -68,7 +66,7 @@ export default function LecturerDashboard() {
   useEffect(() => {
     if (!lecturerId) return;
 
-    const invigilationQ = query(collection(db, "INVIGILATION"), where("lecturer_id", "==", lecturerId));
+    const invigilationQ = query(collection(db, "EXAM_INVIGILATOR"), where("lecturer_id", "==", lecturerId));
     const unsubInvigilation = onSnapshot(invigilationQ, (snap) => {
       const ids = new Set<string>();
       snap.forEach(doc => ids.add(doc.data().exam_id));
@@ -101,28 +99,6 @@ export default function LecturerDashboard() {
     ]);
   };
 
-  const handleRemoveExam = (examId: string) => {
-    Alert.alert("Remove Exam", "Remove this exam from your dashboard?", [
-      { text: "Cancel", style: "cancel" },
-      { 
-        text: "Remove", 
-        style: "destructive", 
-        onPress: async () => {
-          if (!lecturerId) return;
-          const docId = `${examId}_${lecturerId}`;
-          await deleteDoc(doc(db, "INVIGILATION", docId));
-        }
-      }
-    ]);
-  };
-
-  const renderRightActions = (progress: any, dragX: any, item: any) => (
-    <TouchableOpacity style={styles.deleteAction} onPress={() => handleRemoveExam(item.exam_id)}>
-      <Ionicons name="trash-outline" size={24} color="white" />
-      <Text style={styles.deleteText}>Remove</Text>
-    </TouchableOpacity>
-  );
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -151,16 +127,14 @@ export default function LecturerDashboard() {
             keyExtractor={(item) => item.exam_id}
             contentContainerStyle={{ paddingBottom: 20 }}
             renderItem={({ item }) => (
-              <Swipeable renderRightActions={(p, d) => renderRightActions(p, d, item)}>
-                <TouchableOpacity 
-                  style={styles.card} 
-                  onPress={() => router.push({ pathname: "/(lecturer)/seat-monitoring", params: item })}
-                >
-                  <Text style={styles.examTitle}>{item.exam_id} - {item.subject}</Text>
-                  <Text style={styles.examDetail}>📅 {item.date} | 📍 {item.location}</Text>
-                  <Text style={styles.examDetail}>🕒 {formatTime(item.start_time)} - {formatTime(item.end_time)}</Text>
-                </TouchableOpacity>
-              </Swipeable>
+              <TouchableOpacity 
+                style={styles.card} 
+                onPress={() => router.push({ pathname: "/(lecturer)/seat-monitoring", params: item })}
+              >
+                <Text style={styles.examTitle}>{item.exam_id} - {item.subject}</Text>
+                <Text style={styles.examDetail}>📅 {item.date} | 📍 {item.location}</Text>
+                <Text style={styles.examDetail}>🕒 {formatTime(item.start_time)} - {formatTime(item.end_time)}</Text>
+              </TouchableOpacity>
             )}
             ListEmptyComponent={
               <Text style={styles.emptyText}>No invigilation duties assigned.</Text>

@@ -123,10 +123,10 @@ export const styles = StyleSheet.create({
     marginBottom: 4,
   },
   
-  cardName: { color: "white", fontWeight: "bold", fontSize: 16 },
+  cardName: { color: "white", fontWeight: "bold", fontSize: 18 },
   
   // ID Text
-  cardId: { color: "#94a3b8", fontSize: 13, marginBottom: 12 },
+  cardId: { color: "#94a3b8", fontSize: 14, marginTop: 2, marginBottom: 5 },
   cardIdLate: { color: "#e2e8f0", fontSize: 13, marginBottom: 12 }, // Lighter text on red bg
 
   // Time Text
