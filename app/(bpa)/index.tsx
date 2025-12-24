@@ -410,6 +410,7 @@ export default function BPADashboard() {
             <View style={styles.modalContent}>
                 <Text style={styles.modalTitle}>Update Exam Details</Text>
                 
+
                 <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[styles.input, {justifyContent: 'center'}]}>
                     <Text style={{color: editDetails.date ? "white" : "#64748b"}}>{editDetails.date || "Select Date (YYYY-MM-DD)"}</Text>
                 </TouchableOpacity>
@@ -459,20 +460,32 @@ export default function BPADashboard() {
             </View>
             <View style={styles.searchBox}>
                 <Ionicons name="search" size={20} color="#94a3b8" />
-                <TextInput style={styles.searchInput} placeholder="Search Lecturers..." placeholderTextColor="#64748b" value={searchTerm} onChangeText={setSearchTerm}/>
+                <TextInput 
+                    style={styles.searchInput} 
+                    placeholder="Search" 
+                    placeholderTextColor="#64748b" 
+                    value={searchTerm} 
+                    onChangeText={setSearchTerm}
+                />
             </View>
             <FlatList 
-                data={lecturers.filter(l => l.name?.toLowerCase().includes(searchTerm.toLowerCase()))}
+                data={lecturers.filter(l => 
+                    l.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                    l.email?.toLowerCase().includes(searchTerm.toLowerCase())
+                )}
                 keyExtractor={item => item.id}
                 renderItem={({item}) => (
                     <TouchableOpacity style={[styles.listItem, tempAssignments.has(item.lecturer_id) && styles.listItemActive]} onPress={() => toggleLecturer(item.lecturer_id)}>
                         <Text style={[styles.listName, tempAssignments.has(item.lecturer_id) && styles.listNameActive]}>{item.name}</Text>
-                        <Text style={styles.listSub}>{item.lecturer_id} | {item.department}</Text>
+                        <Text style={styles.listSub}>{item.email || "No Email"} | {item.department}</Text>
+                        
                         {tempAssignments.has(item.lecturer_id) && <Ionicons name="checkmark-circle" size={24} color="#38bdf8" style={{position: 'absolute', right: 15}} />}
                     </TouchableOpacity>
                 )}
             />
-            <TouchableOpacity onPress={saveLecturers} style={styles.bottomBtn} disabled={saving}><Text style={styles.saveBtnText}>{saving ? "Saving..." : `Confirm (${tempAssignments.size})`}</Text></TouchableOpacity>
+            <TouchableOpacity onPress={saveLecturers} style={styles.bottomBtn} disabled={saving}>
+                <Text style={styles.saveBtnText}>{saving ? "Saving..." : `Confirm (${tempAssignments.size})`}</Text>
+            </TouchableOpacity>
          </SafeAreaView>
       </Modal>
 
@@ -484,7 +497,7 @@ export default function BPADashboard() {
             </View>
             <View style={styles.searchBox}>
                 <Ionicons name="search" size={20} color="#94a3b8" />
-                <TextInput style={styles.searchInput} placeholder="Search Students..." placeholderTextColor="#64748b" value={searchTerm} onChangeText={setSearchTerm}/>
+                <TextInput style={styles.searchInput} placeholder="Search" placeholderTextColor="#64748b" value={searchTerm} onChangeText={setSearchTerm}/>
             </View>
             <FlatList 
                 data={students.filter(s => s.name?.toLowerCase().includes(searchTerm.toLowerCase()) || s.matric_no?.toLowerCase().includes(searchTerm.toLowerCase()))}
