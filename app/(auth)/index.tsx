@@ -220,8 +220,8 @@ export default function LoginPage() {
             const profileData = {
                 matric_no: matricNo,
                 uid: uid,
-                name: name,
-                program: program.split(' - ')[0], // e.g. "BITS"
+                name: name.toUpperCase(),
+                program: program.split(' - ')[0],
                 palm_pattern: null
             };
             
@@ -234,7 +234,7 @@ export default function LoginPage() {
             const profileData = {
                 lecturer_id: lecturerId,
                 uid: uid,
-                name: name,
+                name: name.toUpperCase(),
                 email: email,
                 department: selectedFaculty.code
             };
