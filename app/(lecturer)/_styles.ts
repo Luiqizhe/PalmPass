@@ -80,15 +80,25 @@ export const styles = StyleSheet.create({
     borderColor: "#1e293b"
   },
   examTitle: { 
-    color: "#fff", 
+    color: "#38bdf8", 
     fontSize: 18, 
-    fontWeight: "bold",  
+    fontWeight: "bold" 
+  },
+  examSubTitle: { 
+    color: "white", 
+    fontSize: 16, 
+    marginBottom: 8, 
+    fontWeight: "600" 
   },
   examDetail: { 
-    color: "#aaa", 
+    color: "#cbd5e1", 
     fontSize: 14, 
-    marginBottom: 3, 
-    marginTop: 2
+    marginBottom: 4 
+  },
+  divider: { 
+    height: 1, 
+    backgroundColor: "#334155", 
+    marginVertical: 10 
   },
   loading: {
     color: "#fff",

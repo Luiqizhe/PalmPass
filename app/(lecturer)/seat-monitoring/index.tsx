@@ -100,8 +100,6 @@ export default function SeatMonitoring() {
   }, [exam_id, studentMap]);
 
   // 3. Load Bathroom Log (Who is OUT?)
-  // ✏️ EDITED: Removed exam_id from query since it's not in your schema.
-  // We fetch ALL "OUT" logs and match them by attendance_id.
   useEffect(() => {
     const q = query(collection(db, "BATHROOM_LOG"), where("status", "==", "OUT"));
     
@@ -126,16 +124,23 @@ export default function SeatMonitoring() {
   const updateStatus = async (status: string) => {
     if (!selectedStudent) return;
     try {
-      await updateDoc(doc(db, "ATTENDANCE", selectedStudent.attendance_id), { status });
+      const updateData: any = { status };
+
+      if (status === "Present") {
+        updateData.timestamp = serverTimestamp(); // Record time
+      } else if (status === "Pending") {
+        updateData.timestamp = null; // Reset time if pending
+      }
+
+      await updateDoc(doc(db, "ATTENDANCE", selectedStudent.attendance_id), updateData);
       setSelectedStudent(null);
     } catch { Alert.alert("Error", "Failed to update status"); }
   };
 
-  // ✏️ EDITED: Strictly follows your schema
   const handleMarkOut = async () => {
     if (!selectedStudent) return;
     try {
-        // 1. Create Log Entry (Strict Schema)
+        // 1. Create Log Entry
         await addDoc(collection(db, "BATHROOM_LOG"), {
             attendance_id: selectedStudent.attendance_id, // FK
             exit_time: serverTimestamp(),
@@ -247,7 +252,7 @@ export default function SeatMonitoring() {
         </View>
         
         <View style={styles.legendContainer}>
-          <View style={styles.legendItem}><View style={[styles.dot, { backgroundColor: "#334155" }]} /><Text style={styles.legendText}>Empty</Text></View>
+          <View style={styles.legendItem}><View style={[styles.dot, { backgroundColor: "#334155" }]} /><Text style={styles.legendText}>Pending</Text></View>
           <View style={styles.legendItem}><View style={[styles.dot, { backgroundColor: "#22c55e" }]} /><Text style={styles.legendText}>Present</Text></View>
           <View style={styles.legendItem}><View style={[styles.dot, { backgroundColor: "#f59e0b" }]} /><Text style={styles.legendText}>Toilet</Text></View>
           <View style={styles.legendItem}><View style={[styles.dot, { backgroundColor: "#ef4444" }]} /><Text style={styles.legendText}>Absent</Text></View>

@@ -130,8 +130,18 @@ export default function LecturerDashboard() {
               <TouchableOpacity 
                 style={styles.card} 
                 onPress={() => router.push({ pathname: "/(lecturer)/seat-monitoring", params: item })}
+                activeOpacity={0.9}
               >
-                <Text style={styles.examTitle}>{item.exam_id} - {item.subject}</Text>
+                {/* Header Section: Code & Name */}
+                <View>
+                    <Text style={styles.examTitle}>{item.exam_id}</Text>
+                    <Text style={styles.examSubTitle}>{item.subject}</Text>
+                </View>
+
+                {/* Divider Line */}
+                <View style={styles.divider} />
+
+                {/* Details Section */}
                 <Text style={styles.examDetail}>📅 {item.date} | 📍 {item.location}</Text>
                 <Text style={styles.examDetail}>🕒 {formatTime(item.start_time)} - {formatTime(item.end_time)}</Text>
               </TouchableOpacity>
