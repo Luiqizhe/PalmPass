@@ -52,6 +52,8 @@ export default function BPADashboard() {
   const [selectedExam, setSelectedExam] = useState<any>(null);
   const [tempAssignments, setTempAssignments] = useState<Set<string>>(new Set());
 
+  const [assignmentData, setAssignmentData] = useState<Record<string, string>>({});
+
   // Input States
   const [newExamId, setNewExamId] = useState("");
   const [newExamSubject, setNewExamSubject] = useState("");
@@ -231,7 +233,20 @@ export default function BPADashboard() {
     setSelectedExam(exam); setSearchTerm("");
     const q = query(collection(db, "ATTENDANCE"), where("exam_id", "==", exam.exam_id));
     const snap = await getDocs(q);
-    setTempAssignments(new Set(snap.docs.map(d => d.data().matric_no)));
+    
+    const assignedSet = new Set<string>();
+    const assignedData: Record<string, string> = {};
+
+    snap.docs.forEach(d => {
+        const data = d.data();
+        assignedSet.add(data.matric_no);
+        if (data.table_no) {
+            assignedData[data.matric_no] = data.table_no;
+        }
+    });
+
+    setTempAssignments(assignedSet);
+    setAssignmentData(assignedData);
     setStudentModalVisible(true);
   };
 
@@ -497,18 +512,39 @@ export default function BPADashboard() {
             </View>
             <View style={styles.searchBox}>
                 <Ionicons name="search" size={20} color="#94a3b8" />
-                <TextInput style={styles.searchInput} placeholder="Search" placeholderTextColor="#64748b" value={searchTerm} onChangeText={setSearchTerm}/>
+                <TextInput style={styles.searchInput} placeholder="Search Students..." placeholderTextColor="#64748b" value={searchTerm} onChangeText={setSearchTerm}/>
             </View>
             <FlatList 
-                data={students.filter(s => s.name?.toLowerCase().includes(searchTerm.toLowerCase()) || s.matric_no?.toLowerCase().includes(searchTerm.toLowerCase()))}
+                data={students
+                    .filter(s => s.name?.toLowerCase().includes(searchTerm.toLowerCase()) || s.matric_no?.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+                }
                 keyExtractor={item => item.id}
-                renderItem={({item}) => (
-                    <TouchableOpacity style={[styles.listItem, tempAssignments.has(item.matric_no) && styles.listItemActive]} onPress={() => toggleStudent(item.matric_no)}>
-                        <Text style={[styles.listName, tempAssignments.has(item.matric_no) && styles.listNameActive]}>{item.name}</Text>
-                        <Text style={styles.listSub}>{item.matric_no} | {item.program}</Text>
-                        {tempAssignments.has(item.matric_no) && <Ionicons name="checkmark-circle" size={24} color="#38bdf8" style={{position: 'absolute', right: 15}} />}
-                    </TouchableOpacity>
-                )}
+                renderItem={({item}) => {
+                    const isSelected = tempAssignments.has(item.matric_no);
+                    const tableNo = assignmentData[item.matric_no];
+
+                    return (
+                        <TouchableOpacity style={[styles.listItem, isSelected && styles.listItemActive]} onPress={() => toggleStudent(item.matric_no)}>
+                            <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%'}}>
+                                {/* Student Info */}
+                                <View style={{flex: 1}}>
+                                    <Text style={[styles.listName, isSelected && styles.listNameActive]}>{item.name}</Text>
+                                    <Text style={styles.listSub}>{item.matric_no} | {item.program}</Text>
+                                </View>
+
+                                {isSelected && tableNo ? (
+                                    <View style={badgeStyles.tableBadge}>
+                                        <Text style={badgeStyles.tableLabel}>Table</Text>
+                                        <Text style={badgeStyles.tableValue}>{tableNo}</Text>
+                                    </View>
+                                ) : (
+                                    isSelected && <Ionicons name="checkmark-circle" size={28} color="#38bdf8" />
+                                )}
+                            </View>
+                        </TouchableOpacity>
+                    );
+                }}
             />
             <TouchableOpacity onPress={saveStudents} style={styles.bottomBtn} disabled={saving}><Text style={styles.saveBtnText}>{saving ? "Saving..." : `Confirm (${tempAssignments.size})`}</Text></TouchableOpacity>
          </SafeAreaView>
@@ -580,4 +616,30 @@ const styles = StyleSheet.create({
   iosPickerHeader: { padding: 15, borderBottomWidth: 1, borderBottomColor: "#334155", alignItems: "flex-end", backgroundColor: "#0f172a" },
   iosPickerDone: { color: "#38bdf8", fontSize: 16, fontWeight: "bold" },
   iosPickerOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.5)" }
+});
+
+const badgeStyles = StyleSheet.create({
+    tableBadge: {
+        backgroundColor: "#0f172a",
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 8,
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "#334155",
+        minWidth: 50,
+        marginLeft: 10
+    },
+    tableLabel: {
+        color: "#94a3b8",
+        fontSize: 8,
+        textTransform: "uppercase",
+        fontWeight: "600",
+        marginBottom: 1
+    },
+    tableValue: {
+        color: "white",
+        fontSize: 16,
+        fontWeight: "bold"
+    }
 });
