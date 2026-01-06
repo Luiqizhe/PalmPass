@@ -136,7 +136,7 @@ TEMPLATES_DIR.mkdir(exist_ok=True)
 
 MATCH_THRESHOLD = 0.9
 SAMPLES_PER_REGISTRATION = 3  # Collect 3 samples automatically
-CAPTURE_COOLDOWN = 3.0
+CAPTURE_COOLDOWN = 4.0
 
 FIREBASE_CRED_PATH = "palmpass-39e86-firebase-adminsdk-fbsvc-66c75e05f1.json"
 db = None
@@ -195,11 +195,8 @@ def update_bathroom_log(attendance_id):
         docs = query.stream()
         
         for doc in docs:
-            # Update to RETURNED
-            doc.reference.update({
-                'status': 'RETURNED',
-                'entry_time': firestore.SERVER_TIMESTAMP
-            })
+            # Delete the OUT entry
+            doc.reference.delete()
             print(f"✓ Bathroom: {attendance_id} returned")
             return "RETURNED"
         
@@ -464,6 +461,7 @@ class LiveVeinSystem:
         self.awaiting_name_input = False
         self.last_capture_time = 0
         self.capture_cooldown = CAPTURE_COOLDOWN
+        self.skip_frames = 0
         
         # Registration state
         self.registration_mode_active = False
@@ -604,6 +602,7 @@ class LiveVeinSystem:
         self.registration_mode_active = False
         self.samples_collected = 0
         self.awaiting_name_input = False
+        self.skip_frames = 0
         self.registration_progress.config(text="")
         
         if self.cap:
@@ -638,6 +637,11 @@ class LiveVeinSystem:
         
         while self.live_active:
             if self.processing or self.awaiting_name_input:
+                time.sleep(0.1)
+                continue
+            
+            if self.skip_frames > 0:
+                self.skip_frames -= 1
                 time.sleep(0.1)
                 continue
             
@@ -1103,13 +1107,17 @@ class LiveVeinSystem:
             result = update_bathroom_log(attendance_id)
             
             if result == "RETURNED":
+                send_lcd_command(f"ID: {matric_no}")
+                time.sleep(0.05)
                 send_lcd_command("RETURNED")
                 self.update_info(f"✅ {match['name']}\nReturned", fg="#00ff00")
                 time.sleep(3)
                 self.reset_to_ready()
             
             elif result == "OUT":
-                send_lcd_command("OUT")
+                send_lcd_command(f"ID: {matric_no}")
+                time.sleep(0.05)
+                send_lcd_command("BATHROOM BREAK")
                 self.update_info(f"🚻 {match['name']}\nBathroom Break", fg="#ffa500")
                 time.sleep(3)
                 self.reset_to_ready()
@@ -1128,10 +1136,11 @@ class LiveVeinSystem:
     def reset_to_ready(self):
         # Clear camera buffer
         if self.cap:
-            for _ in range(10):
+            for _ in range(20):
                 self.cap.grab()
         
         self.processing = False
+        self.skip_frames = 10
         self.update_info("Show your hand...")
         self.update_status("🟢 System Active")
         
