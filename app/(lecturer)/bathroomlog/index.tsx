@@ -154,41 +154,43 @@ export default function BathroomLogScreen() {
 
   // 6. ALERT LOGIC
   useEffect(() => {
-    if (isExamEnded) return;
+  if (isExamEnded) return;
 
-    bathroomLog.forEach((log) => {
-        if (!log.rawExitTime) return;
-        
-        const minutesAgo = Math.floor((new Date().getTime() - log.rawExitTime.getTime()) / 60000);
+  // Correctly filter students by evaluating each one individually
+  const newlyLateStudents = bathroomLog.filter((log) => {
+    if (!log.rawExitTime) return false;
 
-        const newlyLateStudents = bathroomLog.filter((log) => {
-        // ... calc time ...
-            return minutesAgo >= BATHROOM_TIME_LIMIT && !alertedStudentsRef.current.has(log.id);
-        });
+    // Use total seconds for high precision calculation
+    const secondsAgo = Math.floor((new Date().getTime() - log.rawExitTime.getTime()) / 1000);
+    
+    // This prevents "early" alerts if the phone clock is slightly fast
+    const threshold = (BATHROOM_TIME_LIMIT * 60) + 5;
 
-        // 2. If we found any, trigger ONE alert
-        if (newlyLateStudents.length > 0) {
-            // Mark all as alerted
-            newlyLateStudents.forEach(log => alertedStudentsRef.current.add(log.id));
+    // Only return true if they crossed the limit AND haven't been alerted yet
+    return secondsAgo >= threshold && !alertedStudentsRef.current.has(log.id);
+  });
 
-            // Build a list string: "• Ali (Table 1)\n• Abu (Table 2)"
-            const namesList = newlyLateStudents.map(log => `• ${log.name} (Table ${log.table_no})`).join("\n");
-            const count = newlyLateStudents.length;
+  // Trigger ONE grouped alert if we found newly late students
+  if (newlyLateStudents.length > 0) {
+    // Record that these students have been alerted
+    newlyLateStudents.forEach(log => alertedStudentsRef.current.add(log.id));
 
-            // ✅ Single Alert with all names
-            Alert.alert(
-                "⚠️ Time Limit Exceeded",
-                `${count} student${count > 1 ? 's' : ''} exceeded the ${BATHROOM_TIME_LIMIT}-min limit:\n\n${namesList}`,
-                [{ text: "OK", style: "cancel" }]
-            );
-        }
-    });
+    const namesList = newlyLateStudents.map(log => `• ${log.name} (Table ${log.table_no})`).join("\n");
+    const count = newlyLateStudents.length;
 
-    const currentIds = new Set(bathroomLog.map(l => l.id));
-    alertedStudentsRef.current.forEach(id => {
-        if (!currentIds.has(id)) alertedStudentsRef.current.delete(id);
-    });
-  }, [bathroomLog, tick]);
+    Alert.alert(
+      "⚠️ Time Limit Exceeded",
+      `${count} student${count > 1 ? 's' : ''} exceeded the ${BATHROOM_TIME_LIMIT}-min limit:\n\n${namesList}`,
+      [{ text: "OK", style: "cancel" }]
+    );
+  }
+
+  // Remove students from the "Already Alerted" list if they return
+  const currentIds = new Set(bathroomLog.map(l => l.id));
+  alertedStudentsRef.current.forEach(id => {
+    if (!currentIds.has(id)) alertedStudentsRef.current.delete(id);
+  });
+}, [bathroomLog, tick]);
 
   // --- HELPERS ---
   const formatElapsedTime = (startTime: Date | null) => {

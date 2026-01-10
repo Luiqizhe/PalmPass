@@ -30,7 +30,7 @@ export default function LecturerDashboard() {
   if (!user) return <Redirect href="./(auth)/" />;
 
   const [lecturerId, setLecturerId] = useState<string | null>(null);
-  const [lecturerName, setLecturerName] = useState<string>("");
+  const [lecturerEmail, setLecturerEmail] = useState<string>("");
   const [lecturerDept, setLecturerDept] = useState<string>("");
   
   const [loading, setLoading] = useState(true);
@@ -55,7 +55,7 @@ export default function LecturerDashboard() {
         if (!snap.empty) {
           const data = snap.docs[0].data();
           setLecturerId(data.lecturer_id);
-          setLecturerName(data.name || user.email?.split('@')[0] || "Lecturer");
+          setLecturerEmail(data.email || user.email || "No Email Provided");
           setLecturerDept(data.department || "Faculty");
         }
       } catch (e) { console.error("Profile Error", e); }
@@ -108,7 +108,7 @@ export default function LecturerDashboard() {
           <View>
             <Text style={styles.title}>Invigilation</Text>
             <Text style={styles.subtitle}>
-                {lecturerName ? `${lecturerName} | ${lecturerDept}` : "Loading Profile..."}
+                {lecturerEmail ? `${lecturerEmail} | ${lecturerDept}` : "Loading Profile..."}
             </Text>
           </View>
           <TouchableOpacity 

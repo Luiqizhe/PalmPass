@@ -127,7 +127,7 @@ export default function BPADashboard() {
     const unsubExams = onSnapshot(query(collection(db, "EXAM"), orderBy("exam_id", "asc")), (snap) => {
       const data = snap.docs.map(doc => ({ exam_id: doc.id, ...doc.data() }));
 
-      // ✏️ SORTING LOGIC: Incomplete Details First
+      // SORTING LOGIC: Incomplete Details First
       data.sort((a: any, b: any) => {
         const aComplete = a.date && a.start_time && a.end_time && a.location;
         const bComplete = b.date && b.start_time && b.end_time && b.location;
@@ -161,18 +161,27 @@ export default function BPADashboard() {
     }
     setSaving(true);
     try {
-        await setDoc(doc(db, "EXAM", newExamId), {
-            exam_id: newExamId,
-            subject: newExamSubject,
-            date: null, 
-            start_time: null, 
-            end_time: null, 
-            location: null
-        });
-        setCreateModalVisible(false);
-        setNewExamId(""); setNewExamSubject("");
-        Alert.alert("Success", "Exam created.");
-    } catch (e: any) { Alert.alert("Error", e.message); } finally { setSaving(false); }
+      const formattedId = newExamId.trim().toUpperCase();
+      const formattedSubject = newExamSubject.trim().toUpperCase();
+
+      await setDoc(doc(db, "EXAM", formattedId), {
+        exam_id: formattedId,
+        subject: formattedSubject,
+        date: null, 
+        start_time: null, 
+        end_time: null, 
+        location: null
+      });
+
+      setCreateModalVisible(false);
+      setNewExamId(""); 
+      setNewExamSubject("");
+      Alert.alert("Success", "Exam created.");
+    } catch (e: any) { 
+      Alert.alert("Error", e.message); 
+    } finally { 
+      setSaving(false); 
+    }
   };
 
   const openDetailsModal = (exam: any) => {
@@ -190,10 +199,23 @@ export default function BPADashboard() {
     if (!selectedExam) return;
     setSaving(true);
     try {
-        await updateDoc(doc(db, "EXAM", selectedExam.exam_id), editDetails);
+        const updatedDetails = {
+            ...editDetails,
+            location: editDetails.location.trim().toUpperCase()
+        };
+
+        await updateDoc(doc(db, "EXAM", selectedExam.exam_id), updatedDetails);
+        
+        // Update local state so the UI reflects the uppercase version immediately
+        setEditDetails(updatedDetails);
+        
         setDetailsModalVisible(false);
         Alert.alert("Success", "Exam details updated.");
-    } catch (e) { Alert.alert("Error", "Failed to update details."); } finally { setSaving(false); }
+    } catch (e) { 
+        Alert.alert("Error", "Failed to update details."); 
+    } finally { 
+        setSaving(false); 
+    }
   };
 
   const openLecturerModal = async (exam: any) => {
@@ -409,8 +431,8 @@ export default function BPADashboard() {
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalOverlay}>
             <View style={styles.modalContent}>
                 <Text style={styles.modalTitle}>New Exam</Text>
-                <TextInput placeholder="Exam ID (e.g. BITS1234)" placeholderTextColor="#64748b" style={styles.input} value={newExamId} onChangeText={setNewExamId} />
-                <TextInput placeholder="Subject Name" placeholderTextColor="#64748b" style={styles.input} value={newExamSubject} onChangeText={setNewExamSubject} />
+                <TextInput placeholder="Exam ID (e.g. BITS1234)" placeholderTextColor="#64748b" style={[styles.input, { textTransform: 'uppercase' }]} value={newExamId} onChangeText={setNewExamId} autoCapitalize="characters"/>
+                <TextInput placeholder="Subject Name" placeholderTextColor="#64748b" style={[styles.input, { textTransform: 'uppercase' }]} value={newExamSubject} onChangeText={setNewExamSubject} autoCapitalize="characters"/>
                 <TouchableOpacity onPress={handleCreateStub} style={styles.saveBtn} disabled={saving}>
                     {saving ? <ActivityIndicator color="white" /> : <Text style={styles.saveBtnText}>Create Exam</Text>}
                 </TouchableOpacity>
@@ -439,7 +461,7 @@ export default function BPADashboard() {
                     </TouchableOpacity>
                 </View>
 
-                <TextInput placeholder="Location" placeholderTextColor="#64748b" style={styles.input} value={editDetails.location} onChangeText={t => setEditDetails({...editDetails, location: t})} />
+                <TextInput placeholder="Location" placeholderTextColor="#64748b" style={[styles.input, { textTransform: 'uppercase' }]} value={editDetails.location} onChangeText={t => setEditDetails({...editDetails, location: t})} autoCapitalize="characters" />
 
                 <TouchableOpacity onPress={handleSaveDetails} style={styles.saveBtn} disabled={saving}>
                     {saving ? <ActivityIndicator color="white" /> : <Text style={styles.saveBtnText}>Save Details</Text>}
