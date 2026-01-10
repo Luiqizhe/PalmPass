@@ -6,7 +6,7 @@ import {
   signInWithEmailAndPassword,
   signOut
 } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -217,15 +217,35 @@ export default function LoginPage() {
         if (role === "student") {
             const matricNo = idNumber.toUpperCase();
             
-            const profileData = {
-                matric_no: matricNo,
-                uid: uid,
-                name: name.toUpperCase(),
-                program: program.split(' - ')[0],
-                palm_pattern: null
-            };
+            const studentRef = doc(db, "STUDENT", matricNo);
+            const studentSnap = await getDoc(studentRef);
             
-            await setDoc(doc(db, "STUDENT", matricNo), profileData);
+            if (studentSnap.exists()) {
+                const data = studentSnap.data();
+                if (data?.uid) {
+                    Alert.alert("Error", "Account already registered for this matric number.");
+                    // Optionally, delete the created auth user
+                    await userCredential.user.delete();
+                    setIsLoading(false);
+                    return;
+                } else {
+                    // Update existing document with uid and other details
+                    await setDoc(studentRef, {
+                        uid: uid,
+                        name: name.toUpperCase(),
+                        program: program.split(' - ')[0]
+                    }, { merge: true });
+                }
+            } else {
+                // Create new document
+                const profileData = {
+                    matric_no: matricNo,
+                    uid: uid,
+                    name: name.toUpperCase(),
+                    program: program.split(' - ')[0],
+                };
+                await setDoc(studentRef, profileData);
+            }
             router.replace("/(student)");
 
         } else {
