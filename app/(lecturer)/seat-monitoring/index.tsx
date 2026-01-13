@@ -1,13 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  addDoc,
   collection,
   doc,
   getDocs,
   onSnapshot,
   query,
   serverTimestamp,
+  setDoc,
   updateDoc,
   where
 } from "firebase/firestore";
@@ -140,15 +140,29 @@ export default function SeatMonitoring() {
   const handleMarkOut = async () => {
     if (!selectedStudent) return;
     try {
-        // 1. Create Log Entry
-        await addDoc(collection(db, "BATHROOM_LOG"), {
-            attendance_id: selectedStudent.attendance_id, // FK
+        // 1. Query existing logs for this student to get the count
+        const q = query(
+            collection(db, "BATHROOM_LOG"),
+            where("attendance_id", "==", selectedStudent.attendance_id)
+        );
+        const snapshot = await getDocs(q);
+        
+        // 2. Determine the next log number (e.g., if 0 exist, next is 1)
+        const visitCount = snapshot.size + 1;
+        
+        // 3. Generate the custom log_id
+        const customLogId = `${selectedStudent.attendance_id}_${visitCount}`;
+
+        // 4. Save with custom document ID
+        await setDoc(doc(db, "BATHROOM_LOG", customLogId), {
+            log_id: customLogId,
+            attendance_id: selectedStudent.attendance_id, 
             exit_time: serverTimestamp(),
             entry_time: null,
             status: "OUT"
         });
 
-        // 2. Update Attendance Status
+        // 5. Update Attendance Status
         await updateDoc(doc(db, "ATTENDANCE", selectedStudent.attendance_id), {
             status: "Out"
         });

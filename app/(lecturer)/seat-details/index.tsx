@@ -28,6 +28,9 @@ export default function SeatDetails({
 
   const imageUrl = fixImageUrl(student.image_url);
 
+  // Only allow "Mark Out" if status is "Present" and they aren't already out
+  const canMarkOut = student.status === "Present" && !isOut;
+
   return (
     <Modal
       visible={visible}
@@ -68,7 +71,7 @@ export default function SeatDetails({
 
               <Text style={styles.infoLabel}>
                 Status:{" "}
-                {/* ✏️ VISUAL: Show 'OUT (Toilet)' if isOut is true */}
+                {/*Show 'OUT (Toilet)' if isOut is true */}
                 <Text style={{ color: getSeatColor(student), fontWeight: "bold" }}>
                   {isOut ? "OUT (Toilet)" : (student.status || "Not Available")}
                 </Text>
@@ -85,15 +88,25 @@ export default function SeatDetails({
 
             <View style={{ gap: 10 }}>           
                 <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: "#22c55e" }]}
+                    style={[
+                        styles.actionBtn, 
+                        { backgroundColor: "#22c55e" },
+                        isOut && { opacity: 0.5 } // ✏️ Visual feedback
+                    ]}
                     onPress={() => updateStatus("Present")}
+                    disabled={isOut} // ✏️ Locked during bathroom break
                 >
                     <Text style={styles.btnText}>✓ Mark Present</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: "#ef4444" }]}
+                    style={[
+                        styles.actionBtn, 
+                        { backgroundColor: "#ef4444" },
+                        isOut && { opacity: 0.5 } // Visual feedback
+                    ]}
                     onPress={() => updateStatus("Absent")}
+                    disabled={isOut} // ✏️ Locked during bathroom break
                 >
                     <Text style={styles.btnText}>✕ Mark Absent</Text>
                 </TouchableOpacity>
@@ -107,16 +120,27 @@ export default function SeatDetails({
                     </TouchableOpacity>
                 ) : (
                     <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: "#f59e0b" }]} // Orange for Toilet
+                        // Disable if not "Present"
+                        style={[
+                            styles.actionBtn, 
+                            { backgroundColor: "#f59e0b" },
+                            !canMarkOut && { opacity: 0.5 } 
+                        ]}
                         onPress={onMarkOut}
+                        disabled={!canMarkOut} 
                     >
                         <Text style={styles.btnText}>⚠ Mark Out (Toilet)</Text>
                     </TouchableOpacity>
                 )}
 
                 <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: "#334155" }]}
+                    style={[
+                        styles.actionBtn, 
+                        { backgroundColor: "#334155" },
+                        isOut && { opacity: 0.5 } // Visual feedback: fade button if disabled
+                    ]}
                     onPress={() => updateStatus("Pending")}
+                    disabled={isOut} // Prevents clicking if isOut is true
                 >
                     <Text style={styles.btnText}>↺ Reset to Pending</Text>
                 </TouchableOpacity>
