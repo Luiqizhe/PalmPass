@@ -1,0 +1,14 @@
+{
+    "B032410347": {
+        "name": "JAMES KHOR XUAN HAO",
+        "faculty": "FAIX",
+        "program": "BAXI - Bachelor of Computer Science (Artificial Intelligence) with Honours",
+        "templates": [
+            {
+                "hand": "primary",
+                "path": "vein_database_hybrid\\templates\\B032410347\\primary\\vec_20260113_223755_119042.npy",
+                "img_path": "vein_database_hybrid\\templates\\B032410347\\primary\\img_20260113_223755_119042.jpg"
+            }
+        ]
+    }
+}
